@@ -1,45 +1,66 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.figure(figsize=(10, 10))#, dpi=100)
-#plt.figure()#, dpi=100)
+
+plt.figure(figsize=(8.5, 7))
 
 # settings
 graph_moves = True
 if graph_moves:
     plt.ion()
-    update = 0.01  # update every x seconds
+    update = 0.03  # update every x seconds
 
-precision = 500  # number of points to plot
+precision = 250  # number of points to plot
 
 voltage_step = 0.5  # voltage step per box
-v_boxes = 10  # number of voltage step boxes
+v_boxes = 8  # number of voltage step boxes
 
 time_step = 0.1  # time step per box
 t_boxes = 10    # number of time step boxes
 
-hertz = 1  # hertz (frequency) of the signal
-voltage = 1  # voltage (amplitude)
+# each element of list is for one wave, below lists must be same length
+hertz = [1, 2, 3, 4]  # hertz (frequency) of the signal
+voltages = [1, 2, 0.5, 0.25]  # voltage (amplitude)
+line_colors = ["red", "green", "blue", "black"]  # color of the line
 
-
-frequency = round(hertz*time_step*t_boxes, 3)
-length = np.pi * 2 * frequency
-length2 = np.pi * 2 * 2
-length3 = np.pi * 2 * 3
 
 # todo - figure out how to find overlap of all sin waves
 if graph_moves:
     v_precision = int(precision*10)
-    length = int(length*10)
-    length2 = int(length2*10)
-    length3 = int(length3*10)
 else:
     v_precision = precision
 
-wave = voltage * np.sin(np.arange(0, length, length / v_precision))
-wave2 = 2 * np.sin(np.arange(0, length2, length2 / v_precision))
-wave3 = 0.5 * np.sin(np.arange(0, length3, length3 / v_precision))
 
+class Wave:
+    def __init__(self, hz, volt, color, moves):
+        self.hz = hz
+        self.volt = volt
+        self.color = color
+        self.moves = moves
+
+    def get_current(self):
+        return self.hz, self.volt
+
+    def get_wave(self):
+        length = np.pi*2*round(self.hz*time_step*t_boxes, 3)
+        if self.moves:
+            length = int(length*10)
+        return self.volt * np.sin(np.arange(0, length, length/v_precision)), self.color
+
+
+if len(hertz) != len(voltages) or len(hertz) != len(line_colors):
+    print("Error: hertz, voltages and line colors must be the same length")
+    exit()
+
+waves = []
+for i in range(len(hertz)):
+    waves.append(Wave(hertz[i], voltages[i], line_colors[i], graph_moves))
+wave_plots = []
+for i in waves:
+    wave_plots.append(i.get_wave())
+
+
+# graph setup
 time_step_division = time_step*v_boxes / precision
 time = [time_step_division*i for i in range(0, precision)]
 
@@ -54,28 +75,26 @@ plt.ylabel("Voltage [V]")
 plt.ylim(-v_step_boxes/2, v_step_boxes/2)
 plt.yticks([voltage_step*(i-v_boxes/2) for i in range(v_boxes+1)])
 
-plt.grid(True, color="black", linewidth="1.4", alpha=0.5)
+plt.grid(True, color="black", linewidth="1.4", alpha=0.2)
 plt.minorticks_on()
 if graph_moves:
     plt.show()
 
-line1 = plt.plot(time, wave[:precision], color="green", label="Wave1")
-line2 = plt.plot(time, wave2[:precision], color="red", label="Wave2")
-line3 = plt.plot(time, wave3[:precision], color="blue", label="Wave3")
+lines = []
+for wave_plot, color in wave_plots:
+    lines.append(plt.plot(time, wave_plot[:precision], color=color))
 
+# graph loop
 loop = 0
 while True:
-    try:
-        line1.pop(0).remove()
-        line2.pop(0).remove()
-        line3.pop(0).remove()
-    except NameError:
-        pass
+    if loop != 0:
+        for line in lines:
+            line.pop(0).remove()
+        lines.clear()
+        for wave_plot, color in wave_plots:
+            lines.append(plt.plot(time, wave_plot[loop:loop+precision], color=color))
 
     plt.title(f'Wave ({loop})')
-    line1 = plt.plot(time, wave[loop:loop+precision], color="green", label="Wave1")
-    line2 = plt.plot(time, wave2[loop:loop+precision], color="red", label="Wave2")
-    line3 = plt.plot(time, wave3[loop:loop+precision], color="blue", label="Wave3")
     plt.draw()
     if not graph_moves:
         plt.show()
