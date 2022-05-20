@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 plt.figure(figsize=(8.5, 7))
 
 # settings
@@ -12,16 +11,17 @@ if graph_moves:
 
 precision = 250  # number of points to plot
 
-voltage_step = 0.5  # voltage step per box
+# todo autoscale
+voltage_step = 0.75  # voltage step per box
 v_boxes = 8  # number of voltage step boxes
 
 time_step = 0.1  # time step per box
 t_boxes = 10    # number of time step boxes
 
 # each element of list is for one wave, below lists must be same length
-hertz = [1, 2, 3, 4]  # hertz (frequency) of the signal
-voltages = [1, 2, 0.5, 0.25]  # voltage (amplitude)
-line_colors = ["red", "green", "blue", "black"]  # color of the line
+hertz = [1, 0.3, 3, 4, 2]  # hertz (frequency) of the signal
+voltages = [1, 2, 0.5, 3, 2]  # voltage (amplitude)
+line_colors = ["red", "green", "blue", "black", "orange"]  # color of the line
 
 
 # todo - figure out how to find overlap of all sin waves
@@ -31,15 +31,13 @@ else:
     v_precision = precision
 
 
-class Wave:
+# todo square wave, triangle wave, sawtooth wave
+class SineWave:
     def __init__(self, hz, volt, color, moves):
         self.hz = hz
         self.volt = volt
         self.color = color
         self.moves = moves
-
-    def get_current(self):
-        return self.hz, self.volt
 
     def get_wave(self):
         length = np.pi*2*round(self.hz*time_step*t_boxes, 3)
@@ -54,14 +52,19 @@ if len(hertz) != len(voltages) or len(hertz) != len(line_colors):
 
 waves = []
 for i in range(len(hertz)):
-    waves.append(Wave(hertz[i], voltages[i], line_colors[i], graph_moves))
+    waves.append(SineWave(hertz[i], voltages[i], line_colors[i], graph_moves))
 wave_plots = []
 for i in waves:
     wave_plots.append(i.get_wave())
 
 
+# add wave example
+res_list = [wave_plots[0][0][i] + wave_plots[1][0][i] for i in range(len(wave_plots[0][0]))]
+wave_plots.append([res_list, "purple"])
+
+
 # graph setup
-time_step_division = time_step*v_boxes / precision
+time_step_division = time_step*t_boxes / precision
 time = [time_step_division*i for i in range(0, precision)]
 
 t_step_boxes = time_step*t_boxes
@@ -75,6 +78,8 @@ plt.ylabel("Voltage [V]")
 plt.ylim(-v_step_boxes/2, v_step_boxes/2)
 plt.yticks([voltage_step*(i-v_boxes/2) for i in range(v_boxes+1)])
 
+plt.axhline(y=0, color='k', linestyle='--', alpha=0.2)
+plt.axvline(x=(t_boxes*time_step)/2, color='k', linestyle='--', alpha=0.2)
 plt.grid(True, color="black", linewidth="1.4", alpha=0.2)
 plt.minorticks_on()
 if graph_moves:
@@ -101,5 +106,5 @@ while True:
         input()
     plt.pause(update)
     loop += 1
-    if loop == (precision*5):
+    if loop == (precision*10-precision):
         loop = 0
