@@ -7,7 +7,7 @@ plt.figure(figsize=(8.5, 7))
 graph_moves = True
 if graph_moves:
     plt.ion()
-    update = 0.03  # update every x seconds
+    update = 0.01  # update every x seconds
 
 precision = 250  # number of points to plot
 
@@ -19,9 +19,9 @@ time_step = 0.1  # time step per box
 t_boxes = 10    # number of time step boxes
 
 # each element of list is for one wave, below lists must be same length
-hertz = [1, 0.3, 3, 4, 2]  # hertz (frequency) of the signal
-voltages = [1, 2, 0.5, 3, 2]  # voltage (amplitude)
-line_colors = ["red", "green", "blue", "black", "orange"]  # color of the line
+hertz = [1, 3, 4, 2]  # hertz (frequency) of the signal
+voltages = [1, 0.5, 3, 2]  # voltage (amplitude)
+line_colors = ["red", "green", "blue", "orange"]  # color of the line
 
 
 # todo - figure out how to find overlap of all sin waves
@@ -39,11 +39,35 @@ class SineWave:
         self.color = color
         self.moves = moves
 
+    def get_current(self):
+        return self.hz, self.volt
+
     def get_wave(self):
         length = np.pi*2*round(self.hz*time_step*t_boxes, 3)
         if self.moves:
             length = int(length*10)
         return self.volt * np.sin(np.arange(0, length, length/v_precision)), self.color
+
+
+class SineWaveOperation:
+    def __init__(self, wave1, wave2, color):
+        self.hz1, self.volt1 = wave1.get_current()
+        self.hz2, self.volt2 = wave2.get_current()
+        self.color = color
+        print(self.hz1, self.hz2)
+        print(self.volt1, self.volt2)
+        self.moves = True  # temporary
+
+    # todo - check moves from both waves are the same
+
+    def add_wave(self):
+        length1 = np.pi*2*round(self.hz1*time_step*t_boxes, 3)
+        length2 = np.pi*2*round(self.hz2*time_step*t_boxes, 3)
+        if self.moves:
+            length1 = int(length1*10)
+            length2 = int(length2*10)
+        wave1 = self.volt1 * np.sin(np.arange(0, length1, length1/v_precision))
+        return wave1 + self.volt2 * np.sin(np.arange(0, length2, length2/v_precision)), self.color
 
 
 if len(hertz) != len(voltages) or len(hertz) != len(line_colors):
@@ -58,9 +82,9 @@ for i in waves:
     wave_plots.append(i.get_wave())
 
 
-# add wave example
-res_list = [wave_plots[0][0][i] + wave_plots[1][0][i] for i in range(len(wave_plots[0][0]))]
-wave_plots.append([res_list, "purple"])
+# add wave class example
+wave_added = SineWaveOperation(waves[0], waves[1], "pink")
+wave_plots.append(wave_added.add_wave())
 
 
 # graph setup
