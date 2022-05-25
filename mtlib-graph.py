@@ -1,15 +1,12 @@
-from tkinter import *
+import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
-from threading import Thread
-from time import sleep
 
-frame_loop = False
+plt.figure(figsize=(8.5, 7))
 
 # settings
 graph_moves = True
 if graph_moves:
+    plt.ion()
     update = 0.01  # update every x seconds
 
 precision = 250  # number of points to plot
@@ -87,65 +84,41 @@ time = [time_step_division*i for i in range(0, precision)]
 t_step_boxes = time_step*t_boxes
 v_step_boxes = voltage_step*v_boxes
 
+plt.xlabel("Speed [m/s]")
+plt.xlim(0, t_step_boxes)
+plt.xticks([time_step*i for i in range(t_boxes+1)])
 
-def change_state():
-    global frame_loop
-    if frame_loop:
-        frame_loop = False
-    else:
-        frame_loop = True
+plt.ylabel("Voltage [V]")
+plt.ylim(-v_step_boxes/2, v_step_boxes/2)
+plt.yticks([voltage_step*(i-v_boxes/2) for i in range(v_boxes+1)])
 
+plt.axhline(y=0, color='k', linestyle='--', alpha=0.2)
+plt.axvline(x=(t_boxes*time_step)/2, color='k', linestyle='--', alpha=0.2)
+plt.grid(True, color="black", linewidth="1.4", alpha=0.2)
+plt.minorticks_on()
+if graph_moves:
+    plt.show()
 
-def scope():
-    plt = Tk()
-    plt.config(background='black')
-    plt.geometry("1000x700")
-    Label(plt, text="Plot").pack()
-    fig = Figure()
+lines = []
+for wave_plot, color in wave_plots:
+    lines.append(plt.plot(time, wave_plot[:precision], color=color))
 
-    ax = fig.add_subplot(111)
-    ax.set_xlabel("Speed [m/s]")
-    ax.set_xlim(0, t_step_boxes)
-    ax.set_xticks([time_step*i for i in range(t_boxes+1)])
+# graph loop
+loop = 0
+while True:
+    if loop != 0:
+        for line in lines:
+            line.pop(0).remove()
+        lines.clear()
+        for wave_plot, color in wave_plots:
+            lines.append(plt.plot(time, wave_plot[loop:loop+precision], color=color))
 
-    ax.set_ylabel("Voltage [V]")
-    ax.set_ylim(-v_step_boxes / 2, v_step_boxes / 2)
-    ax.set_yticks([voltage_step*(i-v_boxes/2) for i in range(v_boxes+1)])
-
-    ax.grid(True, color="black", linewidth="1.4", alpha=0.2)
-    ax.minorticks_on()
-
-    graph = FigureCanvasTkAgg(fig, master=plt)
-    graph.get_tk_widget().pack(side="top", fill='both', expand=True)
-
-    lines = []
-    for wave_plot, color in wave_plots:
-        lines.append(ax.plot(time, wave_plot[:precision], color=color))
-
-    def plotter():
+    plt.title(f'Wave ({loop})')
+    plt.draw()
+    if not graph_moves:
+        plt.show()
+        input()
+    plt.pause(update)
+    loop += 1
+    if loop == (precision*10-precision):
         loop = 0
-        while frame_loop:
-            if loop != 0:
-                for line in lines:
-                    line.pop(0).remove()
-                lines.clear()
-                for wave_plot, color in wave_plots:
-                    lines.append(ax.plot(time, wave_plot[loop:loop + precision], color=color))
-            graph.draw()
-            sleep(update)
-            loop += 1
-            if loop == (precision*10-precision):
-                loop = 0
-
-    def gui_handler():
-        change_state()
-        Thread(target=plotter).start()
-
-    b = Button(plt, text="Stop/Reset", command=gui_handler, bg="red", fg="white")
-    b.pack()
-    gui_handler()
-    plt.mainloop()
-
-
-if __name__ == '__main__':
-    scope()
