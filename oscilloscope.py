@@ -99,10 +99,11 @@ def change_state():
 def scope():
     plt = Tk()
     plt.config(background='black')
-    plt.geometry("1000x700")
-    Label(plt, text="Plot").pack()
+    plt.geometry("1000x900")
+    plt.resizable(False, False)
+    label = Label(plt, text="Wave 0")
+    label.pack()
     fig = Figure()
-
     ax = fig.add_subplot(111)
     ax.set_xlabel("Speed [m/s]")
     ax.set_xlim(0, t_step_boxes)
@@ -131,6 +132,7 @@ def scope():
                 lines.clear()
                 for wave_plot, color in wave_plots:
                     lines.append(ax.plot(time, wave_plot[loop:loop + precision], color=color))
+            label.config(text=f"Wave {loop}")
             graph.draw()
             sleep(update)
             loop += 1
